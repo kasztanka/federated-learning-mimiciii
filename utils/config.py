@@ -9,6 +9,6 @@ class Config:
     early_stopping_patience: int = 20
     batch_normalization: bool = True
     learning_rate: float = 0.001
-    loss_func: str = 'binary_crossentropy'
-    final_activation: str = 'sigmoid'
     label_type: int = 0
+    hidden_dim = None
+    validation_split = 0.25

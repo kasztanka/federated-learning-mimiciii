@@ -1,5 +1,5 @@
 numpy==1.18.2
 jupyter==1.0.0
-Keras==2.3.1
 scikit-learn==0.22.1
+torch==1.4.0
 tqdm==4.43.0
