@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 
 @dataclass
@@ -10,5 +10,9 @@ class Config:
     batch_normalization: bool = True
     learning_rate: float = 0.001
     label_type: int = 0
-    hidden_dim = None
-    validation_split = 0.25
+    hidden_dim: int = None
+    validation_split: float = 0.25
+
+
+def config_to_dict(config):
+    return {f.name: getattr(config, f.name) for f in fields(config)}
