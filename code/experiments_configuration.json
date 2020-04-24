@@ -1,0 +1,22 @@
+{
+  "default": {
+    "train_size": null,
+    "num_of_workers": 3
+  },
+  "experiments": [
+    {
+      "type": "train size",
+      "parameters": {
+        "name": "train_size",
+        "values": [50, 100, 500, 1000, 5000, 10000]
+      }
+    },
+    {
+      "type": "num of workers",
+      "parameters": {
+        "name": "num_of_workers",
+        "values": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      }
+    }
+  ]
+}
