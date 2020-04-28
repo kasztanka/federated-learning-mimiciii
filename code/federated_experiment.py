@@ -5,7 +5,6 @@ import numpy as np
 import torch
 from torch.nn import BCELoss
 from torch.optim import RMSprop
-from tqdm.notebook import tqdm
 
 import syft as sy
 from syft.federated.floptimizer import Optims
@@ -25,7 +24,7 @@ class FederatedExperiment:
         return [sy.VirtualWorker(self.hook, id=worker_id) for worker_id in worker_ids]
 
     def distribute_dataset(self, X, y, train_idx, test_idx, workers):
-        tensor_X, tensor_y = torch.tensor(X), torch.tensor(y).view(-1, 1)
+        tensor_X, tensor_y = torch.tensor(X).float(), torch.tensor(y).view(-1, 1).float()
 
         num_train = len(train_idx)
         split = int(np.floor(self.model_config.validation_split * num_train))
@@ -71,7 +70,7 @@ class FederatedExperiment:
         early_stopping = EarlyStopping(patience=self.model_config.early_stopping_patience)
 
         epochs_finished = 0
-        for _ in tqdm(range(self.model_config.epochs)):
+        for _ in range(self.model_config.epochs):
 
             model.train()
             for data, target in train_loader:
