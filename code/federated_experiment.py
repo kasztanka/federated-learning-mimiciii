@@ -19,7 +19,8 @@ class FederatedExperiment:
         self.num_of_workers = num_of_workers
 
     def create_workers(self):
-        return [string.ascii_letters[i] + str(self.experiment_id) for i in range(self.num_of_workers)]
+        worker_ids = [string.ascii_letters[i] + str(self.experiment_id) for i in range(self.num_of_workers)]
+        return [sy.VirtualWorker(self.hook, id=worker_id) for worker_id in worker_ids]
 
     def distribute_dataset(self, X, y, train_idx, test_idx, workers):
         tensor_X, tensor_y = torch.tensor(X), torch.tensor(y).view(-1, 1)
