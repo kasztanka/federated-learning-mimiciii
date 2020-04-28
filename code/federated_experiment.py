@@ -2,11 +2,13 @@ import math
 import string
 
 import numpy as np
-import syft as sy
 import torch
-from syft.federated.floptimizer import Optims
 from torch.nn import BCELoss
+from torch.optim import RMSprop
 from tqdm.notebook import tqdm
+
+import syft as sy
+from syft.federated.floptimizer import Optims
 
 from utils import EarlyStopping
 
