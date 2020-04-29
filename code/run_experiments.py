@@ -1,4 +1,5 @@
 import csv
+import gc
 import json
 import os
 import time
@@ -85,6 +86,7 @@ def run_experiment(experiment, model, X, y, train_idx, test_idx, metric_list):
         results[metric.name] = score
 
     del train_loader, valid_loader, test_loader, workers, grid
+    gc.collect()
     return results
 
 
