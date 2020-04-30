@@ -2,6 +2,7 @@ import csv
 import json
 import os
 import time
+from multiprocessing import Process, Queue
 
 import numpy as np
 import torch
@@ -51,7 +52,7 @@ def denormalize_config(config_as_json):
     return configurations
 
 
-def run_experiment(experiment, model, X, y, train_idx, test_idx, metric_list):
+def run_experiment(queue, experiment, model, X, y, train_idx, test_idx, metric_list):
     results = {}
 
     standardizer = Standardizer()
@@ -85,7 +86,7 @@ def run_experiment(experiment, model, X, y, train_idx, test_idx, metric_list):
         results[metric.name] = score
 
     del train_loader, valid_loader, test_loader, workers, grid
-    return results
+    queue.put(results)
 
 
 def main():
@@ -136,7 +137,14 @@ def main():
             if experiment_config['train_size'] is not None:
                 train_idx = train_idx[:experiment_config['train_size']]
 
-            results = run_experiment(experiment, model, X, y, train_idx, test_idx, metric_list)
+            queue = Queue()
+            p = Process(
+                target=run_experiment,
+                args=(queue, experiment, model, X, y, train_idx, test_idx, metric_list)
+            )
+            p.start()
+            p.join()
+            results = queue.get()
 
             for name, value in experiment_config.items():
                 results[name] = value
