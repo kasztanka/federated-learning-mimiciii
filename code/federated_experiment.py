@@ -23,7 +23,7 @@ class FederatedExperiment:
         return [sy.VirtualWorker(self.hook, id=worker_id) for worker_id in worker_ids]
 
     def distribute_dataset(self, X, y, train_idx, test_idx, workers):
-        tensor_X, tensor_y = torch.tensor(X).float(), torch.tensor(y).view(-1, 1).float()
+        tensor_X, tensor_y = torch.tensor(X).float(), torch.tensor(y).float()
 
         num_train = len(train_idx)
         split = int(np.floor(self.model_config.validation_split * num_train))
@@ -108,18 +108,18 @@ class FederatedExperiment:
         return model, epochs_finished
 
     @staticmethod
-    def predict(model, data_loader):
+    def predict(model, data_loader, output_size):
         model.eval()
 
         num_elements = sum([len(data) for data, _ in data_loader])
 
-        predictions = torch.zeros(num_elements)
-        targets = torch.zeros(num_elements)
+        predictions = torch.zeros(num_elements, output_size)
+        targets = torch.zeros(num_elements, output_size)
 
         start = 0
         for data, target in data_loader:
 
-            target = target.get().view(-1)
+            target = target.get()
             end = start + len(target)
 
             targets[start:end] = target
@@ -127,7 +127,7 @@ class FederatedExperiment:
             model.send(data.location)
             with torch.no_grad():
                 output = model(data)
-                predictions[start:end] = output.get().view(-1)
+                predictions[start:end] = output.get()
             model.get()
             start = end
         return predictions, targets

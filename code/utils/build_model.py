@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 
-def build_model(config, n_features):
+def build_model(config, n_features, output_size):
     layers = []
 
     hidden_dim = config.hidden_dim
@@ -17,10 +17,10 @@ def build_model(config, n_features):
         layers.append(nn.Sigmoid())
         layers.append(nn.Dropout(0.2))
 
-    layers.append(nn.Linear(hidden_dim, 1))
+    layers.append(nn.Linear(hidden_dim, output_size))
 
     if config.batch_normalization:
-        layers.append(nn.BatchNorm1d(1))
+        layers.append(nn.BatchNorm1d(output_size))
 
     layers.append(nn.Sigmoid())
 
