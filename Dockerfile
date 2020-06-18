@@ -14,4 +14,4 @@ COPY ./code $CODE
 COPY ./data $DATA
 
 WORKDIR /
-ENTRYPOINT ["python", "/code/run_experiments_icd9.py"]
+ENTRYPOINT ["python", "/code/run_experiments.py", "mortality", "experiments_configuration.json"]

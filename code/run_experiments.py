@@ -1,6 +1,7 @@
 import csv
 import json
 import os
+import sys
 import time
 from multiprocessing import Process, Queue
 
@@ -11,11 +12,12 @@ from tqdm import tqdm
 
 import syft as sy
 
+from experiment_setup import ICD9_SETUP, MORTALITY_SETUP
 from federated_experiment import FederatedExperiment
 from utils import build_model, Config, Metric, Standardizer
 
 
-def load_data(config):
+def load_data(experiment_setup):
     data_folder = os.getenv('DATA')
     data_filename = os.path.join(data_folder, 'imputed-normed-ep_1_24.npz')
     folds_filename = os.path.join(data_folder, '5-folds.npz')
@@ -26,10 +28,10 @@ def load_data(config):
         exit(1)
 
     folds_file = np.load(folds_filename, allow_pickle=True)
-    folds = folds_file['folds_ep_mor'][config.label_type][0]
+    folds = folds_file[experiment_setup.folds_file][0][0]
 
     data_file = np.load(data_filename, allow_pickle=True)
-    y = data_file['adm_labels_all'][:, config.label_type]
+    y = data_file[experiment_setup.y_label][:, :experiment_setup.output_size]
     y = (y > 0).astype(float)
 
     X = np.genfromtxt(features_filename, delimiter=',')
@@ -52,8 +54,8 @@ def denormalize_config(config_as_json):
     return configurations
 
 
-def run_experiment(queue, experiment, model, X, y, train_idx, test_idx, metric_list):
-    results = {}
+def run_experiment(queue, experiment, model, X, y, train_idx, test_idx, metric_list, output_size):
+    time_measurements = {}
 
     standardizer = Standardizer()
     standardizer.fit(X[train_idx])
@@ -65,32 +67,51 @@ def run_experiment(queue, experiment, model, X, y, train_idx, test_idx, metric_l
 
     start = time.time()
     train_loader, valid_loader, test_loader = experiment.collect_datasets(grid)
-    results['collecting_datasets'] = time.time() - start
+    time_measurements['collecting_datasets'] = time.time() - start
 
     start = time.time()
     model, finished_epochs = experiment.train(model, train_loader, valid_loader, workers)
     training_time = time.time() - start
-    results['training'] = training_time
-    results['training_per_epoch'] = training_time / finished_epochs
+    time_measurements['training'] = training_time
+    time_measurements['training_per_epoch'] = training_time / finished_epochs
 
     start = time.time()
-    y_soft, y_true = experiment.predict(model, test_loader)
+    y_soft, y_true = experiment.predict(model, test_loader, output_size)
     y_pred = (y_soft > 0.5).type(torch.int)
-    results['prediction'] = time.time() - start
+    time_measurements['prediction'] = time.time() - start
 
-    for metric in metric_list:
-        if metric.use_soft:
-            score = metric.function(y_true, y_soft)
-        else:
-            score = metric.function(y_true, y_pred)
-        results[metric.name] = score
+    results = []
+    for i in range(output_size):
+        single_output_results = dict(time_measurements)
+        single_output_results['output_label'] = i + 1
+        for metric in metric_list:
+            if metric.use_soft:
+                score = metric.function(y_true[:, i], y_soft[:, i])
+            else:
+                score = metric.function(y_true[:, i], y_pred[:, i])
+            single_output_results[metric.name] = score
+        results.append(single_output_results)
 
     del train_loader, valid_loader, test_loader, workers, grid
     queue.put(results)
 
 
 def main():
-    configuration_filename = os.path.join(os.getenv('CODE'), 'experiments_configuration.json')
+    if len(sys.argv) != 3:
+        raise ValueError('Please specify two arguments: problem name and experiments configuration file')
+
+    allowed_experiments = {
+        'icd9': ICD9_SETUP,
+        'mortality': MORTALITY_SETUP
+    }
+    experiment_setup = allowed_experiments.get(sys.argv[1], None)
+    if experiment_setup is None:
+        raise ValueError(f'Wrong problem name. Allowed values are: {list(allowed_experiments.keys())}')
+
+    configuration_filename = os.path.join(os.getenv('CODE'), sys.argv[2])
+    if not os.path.exists(configuration_filename):
+        raise ValueError('Specified experiments configuration file does not exist.')
+
     with open(configuration_filename) as f:
         config_as_json = json.load(f)
     configurations = denormalize_config(config_as_json)
@@ -98,7 +119,7 @@ def main():
     model_config = Config()
     hook = sy.TorchHook(torch)
 
-    X, y, folds = load_data(model_config)
+    X, y, folds = load_data(experiment_setup)
 
     metric_list = [
         Metric('accuracy', metrics.accuracy_score, use_soft=False),
@@ -113,11 +134,11 @@ def main():
 
     if not os.path.exists(results_folder):
         os.makedirs(results_folder)
-    results_filename = os.path.join(results_folder, 'experiment_results.csv')
+    results_filename = os.path.join(results_folder, experiment_setup.results_filename)
 
     fieldnames = list(configurations[0].keys())
     fieldnames += [metric.name for metric in metric_list]
-    fieldnames += ['collecting_datasets', 'training', 'training_per_epoch', 'prediction']
+    fieldnames += ['collecting_datasets', 'training', 'training_per_epoch', 'prediction', 'output_label']
     with open(results_filename, mode='w') as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
@@ -131,7 +152,7 @@ def main():
             experiment_id = i * repetitions + j
             experiment = FederatedExperiment(experiment_id, hook, model_config, experiment_config['num_of_workers'])
 
-            model = build_model(model_config, n_features=X.shape[1])
+            model = build_model(model_config, n_features=X.shape[1], output_size=experiment_setup.output_size)
 
             train_idx = np.concatenate((train_idx, valid_idx))
             if experiment_config['train_size'] is not None:
@@ -140,18 +161,20 @@ def main():
             queue = Queue()
             p = Process(
                 target=run_experiment,
-                args=(queue, experiment, model, X, y, train_idx, test_idx, metric_list)
+                args=(queue, experiment, model, X, y, train_idx, test_idx, metric_list, experiment_setup.output_size)
             )
             p.start()
             p.join()
             results = queue.get()
 
             for name, value in experiment_config.items():
-                results[name] = value
+                for k in range(experiment_setup.output_size):
+                    results[k][name] = value
 
             with open(results_filename, mode='a') as csv_file:
                 writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-                writer.writerow(results)
+                for k in range(experiment_setup.output_size):
+                    writer.writerow(results[k])
 
 
 if __name__ == "__main__":
