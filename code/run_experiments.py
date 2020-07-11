@@ -83,7 +83,7 @@ def run_experiment(queue, experiment, model, X, y, train_idx, test_idx, metric_l
     results = []
     for i in range(output_size):
         single_output_results = dict(time_measurements)
-        single_output_results['output_label'] = i + 1
+        single_output_results['task'] = i + 1
         for metric in metric_list:
             if metric.use_soft:
                 score = metric.function(y_true[:, i], y_soft[:, i])
@@ -138,7 +138,7 @@ def main():
 
     fieldnames = list(configurations[0].keys())
     fieldnames += [metric.name for metric in metric_list]
-    fieldnames += ['collecting_datasets', 'training', 'training_per_epoch', 'prediction', 'output_label']
+    fieldnames += ['collecting_datasets', 'training', 'training_per_epoch', 'prediction', 'task']
     with open(results_filename, mode='w') as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
