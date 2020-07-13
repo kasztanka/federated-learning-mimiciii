@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 import syft as sy
 
+from distributions import beta_center, beta_left_skewed, beta_right_skewed, linear, uniform
 from experiment_setup import ICD9_SETUP, MORTALITY_SETUP
 from federated_experiment import FederatedExperiment
 from utils import build_model, Config, Metric, Standardizer
@@ -143,6 +144,14 @@ def main():
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
 
+    node_distribution_str2func = {
+        'beta_center': beta_center,
+        'beta_right_skewed': beta_right_skewed,
+        'beta_left_skewed': beta_left_skewed,
+        'linear': linear,
+        'uniform': uniform,
+    }
+
     repetitions = len(folds)
     progress_bar = tqdm(enumerate(configurations), total=len(configurations))
     for i, experiment_config in progress_bar:
@@ -150,7 +159,11 @@ def main():
             progress_bar.set_postfix(config=str(experiment_config), iter=f'{j+1}/{repetitions}', refresh=True)
 
             experiment_id = i * repetitions + j
-            experiment = FederatedExperiment(experiment_id, hook, model_config, experiment_config['num_of_workers'])
+            experiment = FederatedExperiment(
+                experiment_id, hook, model_config,
+                experiment_config['num_of_workers'],
+                node_distribution_str2func[experiment_config['node_distribution']]
+            )
 
             model = build_model(model_config, n_features=X.shape[1], output_size=experiment_setup.output_size)
 

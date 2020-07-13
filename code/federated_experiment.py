@@ -1,5 +1,3 @@
-import math
-
 import numpy as np
 import torch
 from torch.nn import BCELoss
@@ -12,11 +10,12 @@ from utils import EarlyStopping
 
 
 class FederatedExperiment:
-    def __init__(self, experiment_id, hook, model_config, num_of_workers):
+    def __init__(self, experiment_id, hook, model_config, num_of_workers, node_distribution):
         self.experiment_id = experiment_id
         self.hook = hook
         self.model_config = model_config
         self.num_of_workers = num_of_workers
+        self.node_distribution = node_distribution
 
     def create_workers(self):
         worker_ids = [str(self.experiment_id) + "-" + str(i) for i in range(self.num_of_workers)]
@@ -32,13 +31,9 @@ class FederatedExperiment:
         tags = ['train', 'valid', 'test']
 
         for idx, tag in zip(indices, tags):
-            split_per_worker = math.ceil(len(tensor_X[idx]) / len(workers))
-            split_X = torch.split(tensor_X[idx], split_per_worker, dim=0)
-            split_y = torch.split(tensor_y[idx], split_per_worker, dim=0)
-
-            for i in range(len(workers)):
-                tag_X = split_X[i].tag("#X", f"#{tag}").describe("")
-                tag_y = split_y[i].tag("#Y", f"#{tag}").describe("")
+            for i, (part_x, part_y) in enumerate(self.node_distribution(tensor_X[idx], tensor_y[idx], len(workers))):
+                tag_X = part_x.tag("#X", f"#{tag}").describe("")
+                tag_y = part_y.tag("#Y", f"#{tag}").describe("")
 
                 tag_X.send(workers[i], garbage_collect_data=False)
                 tag_y.send(workers[i], garbage_collect_data=False)

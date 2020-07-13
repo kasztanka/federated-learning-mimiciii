@@ -1,7 +1,8 @@
 {
   "default": {
     "train_size": null,
-    "num_of_workers": 3
+    "num_of_workers": 32,
+    "node_distribution": "uniform"
   },
   "experiments": [
     {
@@ -16,6 +17,13 @@
       "parameters": {
         "name": "num_of_workers",
         "values": [1, 2, 4, 8, 16, 32, 64, 128]
+      }
+    },
+    {
+      "type": "node distribution",
+      "parameters": {
+        "name": "node_distribution",
+        "values": ["beta_center", "beta_left_skewed", "beta_right_skewed", "linear", "uniform"]
       }
     }
   ]
