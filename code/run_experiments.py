@@ -8,7 +8,6 @@ from multiprocessing import Process, Queue
 import numpy as np
 import torch
 from sklearn import metrics
-from tqdm import tqdm
 
 import syft as sy
 
@@ -92,6 +91,7 @@ def run_experiment(queue, experiment, model, X, y, train_idx, test_idx, metric_l
             single_output_results[metric.name] = score
         results.append(single_output_results)
 
+    experiment.clean_up(workers)
     del train_loader, valid_loader, test_loader, workers, grid
     queue.put(results)
 
@@ -152,10 +152,10 @@ def main():
     }
 
     repetitions = len(folds)
-    progress_bar = tqdm(enumerate(configurations), total=len(configurations))
-    for i, experiment_config in progress_bar:
+    for i, experiment_config in enumerate(configurations):
         for j, (train_idx, valid_idx, test_idx) in enumerate(folds):
-            progress_bar.set_postfix(config=str(experiment_config), iter=f'{j+1}/{repetitions}', refresh=True)
+            print(f'config: {i+1}/{len(configurations)} repetition: {j+1}/{repetitions}', flush=True)
+            print(experiment_config, flush=True)
 
             experiment_id = i * repetitions + j
             experiment = FederatedExperiment(

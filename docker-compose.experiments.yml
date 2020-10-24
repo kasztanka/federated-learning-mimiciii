@@ -1,0 +1,59 @@
+version: "3"
+services:
+  network:
+    image: openmined/grid-network:production
+    environment:
+      - PORT=7000
+      - SECRET_KEY=ineedtoputasecrethere
+      - DATABASE_URL=sqlite:///databasenetwork.db
+    ports:
+      - 7000:7000
+  worker0:
+    image: openmined/grid-node:production
+    environment:
+      - NODE_ID=Worker0
+      - ADDRESS=http://worker0:5000/
+      - PORT=5000
+      - NETWORK=http://network:7000
+      - DATABASE_URL=sqlite:///databasenode.db
+    depends_on:
+      - 'network'
+    ports:
+      - 5000:5000
+
+  worker1:
+    image: openmined/grid-node:production
+    environment:
+      - NODE_ID=Worker1
+      - ADDRESS=http://worker1:5001/
+      - PORT=5001
+      - NETWORK=http://network:7000
+      - DATABASE_URL=sqlite:///databasenode.db
+    depends_on:
+      - 'network'
+    ports:
+      - 5001:5001
+
+  worker2:
+    image: openmined/grid-node:production
+    environment:
+      - NODE_ID=Worker2
+      - ADDRESS=http://worker2:5002/
+      - PORT=5002
+      - NETWORK=http://network:7000
+      - DATABASE_URL=sqlite:///databasenode.db
+    depends_on:
+      - 'network'
+    ports:
+      - 5002:5002
+  experiments:
+    depends_on:
+      - 'network'
+      - 'worker0'
+      - 'worker1'
+      - 'worker2'
+    build:
+      context: .
+      dockerfile: Experiments.Dockerfile
+    volumes:
+      - ./results:/results

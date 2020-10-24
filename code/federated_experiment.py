@@ -5,6 +5,7 @@ from torch.optim import RMSprop
 
 import syft as sy
 from syft.federated.floptimizer import Optims
+from syft.grid.clients.data_centric_fl_client import DataCentricFLClient
 
 from utils import EarlyStopping
 
@@ -18,8 +19,8 @@ class FederatedExperiment:
         self.node_distribution = node_distribution
 
     def create_workers(self):
-        worker_ids = [str(self.experiment_id) + "-" + str(i) for i in range(self.num_of_workers)]
-        return [sy.VirtualWorker(self.hook, id=worker_id) for worker_id in worker_ids]
+        addresses = [f'ws://worker{worker_id}:{worker_id + 5000}/' for worker_id in range(self.num_of_workers)]
+        return [DataCentricFLClient(self.hook, address) for address in addresses]
 
     def distribute_dataset(self, X, y, train_idx, test_idx, workers):
         tensor_X, tensor_y = torch.tensor(X).float(), torch.tensor(y).float()
@@ -113,7 +114,6 @@ class FederatedExperiment:
 
         start = 0
         for data, target in data_loader:
-
             target = target.get()
             end = start + len(target)
 
@@ -126,3 +126,9 @@ class FederatedExperiment:
             model.get()
             start = end
         return predictions, targets
+
+    @staticmethod
+    def clean_up(workers):
+        for worker in workers:
+            worker.clear_objects_remote()
+            worker.close()
