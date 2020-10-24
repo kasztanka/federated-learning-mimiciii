@@ -2,4 +2,6 @@
 /.ipynb_checkpoints
 /data
 /results
+/notebooks/results
 */__pycache__
+*.pyc

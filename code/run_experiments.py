@@ -13,9 +13,8 @@ from tqdm import tqdm
 import syft as sy
 
 from distributions import beta_center, beta_left_skewed, beta_right_skewed, linear, uniform
-from experiment_setup import ICD9_SETUP, MORTALITY_SETUP
 from federated_experiment import FederatedExperiment
-from utils import build_model, Config, Metric, Standardizer
+from utils import build_model, Config, ICD9_SETUP, Metric, MORTALITY_SETUP, Standardizer
 
 
 def load_data(experiment_setup):
@@ -135,7 +134,7 @@ def main():
 
     if not os.path.exists(results_folder):
         os.makedirs(results_folder)
-    results_filename = os.path.join(results_folder, experiment_setup.results_filename)
+    results_filename = os.path.join(results_folder, experiment_setup.results_filename + '.csv')
 
     fieldnames = list(configurations[0].keys())
     fieldnames += [metric.name for metric in metric_list]
