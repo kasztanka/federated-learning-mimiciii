@@ -8,6 +8,7 @@ services:
       - DATABASE_URL=sqlite:///databasenetwork.db
     ports:
       - 7000:7000
+
   worker0:
     image: openmined/grid-node:production
     environment:
@@ -46,6 +47,7 @@ services:
       - 'network'
     ports:
       - 5002:5002
+
   experiments:
     depends_on:
       - 'network'
