@@ -32,6 +32,8 @@ docker-compose -f docker-compose.experiments.yml up
 ```
 This will create a docker-compose file and run it. By default the results will be saved in `./results/`.
 
+In case you want to modify the experiments configuration, edit `code/experiments_configuration.json` file and run the `docker-compose` command with `--build` at the end.
+
 Additionally, you can pass a maximal number of workers used in experiments as a parameter to the Python script:
 ```
 python create_docker_compose_for_experiments.py 3
