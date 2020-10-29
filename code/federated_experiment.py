@@ -11,8 +11,7 @@ from utils import EarlyStopping
 
 
 class FederatedExperiment:
-    def __init__(self, experiment_id, hook, model_config, num_of_workers, node_distribution):
-        self.experiment_id = experiment_id
+    def __init__(self, hook, model_config, num_of_workers, node_distribution):
         self.hook = hook
         self.model_config = model_config
         self.num_of_workers = num_of_workers
@@ -20,7 +19,7 @@ class FederatedExperiment:
 
     def create_workers(self):
         addresses = [f'ws://worker{worker_id}:{worker_id + 5000}/' for worker_id in range(self.num_of_workers)]
-        return [DataCentricFLClient(self.hook, address, is_client_worker=True) for address in addresses]
+        return [DataCentricFLClient(self.hook, address) for address in addresses]
 
     def distribute_dataset(self, X, y, train_idx, test_idx, workers):
         tensor_X, tensor_y = torch.tensor(X).float(), torch.tensor(y).float()
@@ -127,8 +126,8 @@ class FederatedExperiment:
             start = end
         return predictions, targets
 
-    @staticmethod
-    def clean_up(workers):
+    def clean_up(self, workers):
         for worker in workers:
             worker.clear_objects_remote()
             worker.close()
+        self.hook.local_worker.clear_objects()

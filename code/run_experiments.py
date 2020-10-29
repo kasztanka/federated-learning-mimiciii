@@ -157,10 +157,8 @@ def main():
             print(f'config: {i+1}/{len(configurations)} repetition: {j+1}/{repetitions}', flush=True)
             print(experiment_config, flush=True)
 
-            experiment_id = i * repetitions + j
             experiment = FederatedExperiment(
-                experiment_id, hook, model_config,
-                experiment_config['num_of_workers'],
+                hook, model_config, experiment_config['num_of_workers'],
                 node_distribution_str2func[experiment_config['node_distribution']]
             )
 
