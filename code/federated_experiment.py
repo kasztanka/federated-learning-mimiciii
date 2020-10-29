@@ -20,7 +20,7 @@ class FederatedExperiment:
 
     def create_workers(self):
         addresses = [f'ws://worker{worker_id}:{worker_id + 5000}/' for worker_id in range(self.num_of_workers)]
-        return [DataCentricFLClient(self.hook, address) for address in addresses]
+        return [DataCentricFLClient(self.hook, address, is_client_worker=True) for address in addresses]
 
     def distribute_dataset(self, X, y, train_idx, test_idx, workers):
         tensor_X, tensor_y = torch.tensor(X).float(), torch.tensor(y).float()
