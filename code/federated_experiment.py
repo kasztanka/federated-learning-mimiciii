@@ -11,8 +11,8 @@ from utils import EarlyStopping
 
 
 class FederatedExperiment:
-    def __init__(self, hook, model_config, num_of_workers, node_distribution):
-        self.hook = hook
+    def __init__(self, model_config, num_of_workers, node_distribution):
+        self.hook = sy.TorchHook(torch)
         self.model_config = model_config
         self.num_of_workers = num_of_workers
         self.node_distribution = node_distribution

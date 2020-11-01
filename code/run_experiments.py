@@ -9,8 +9,6 @@ import numpy as np
 import torch
 from sklearn import metrics
 
-import syft as sy
-
 from distributions import beta_center, beta_left_skewed, beta_right_skewed, linear, uniform
 from federated_experiment import FederatedExperiment
 from utils import build_model, Config, ICD9_SETUP, Metric, MORTALITY_SETUP, Standardizer
@@ -117,7 +115,6 @@ def main():
     configurations = denormalize_config(config_as_json)
 
     model_config = Config()
-    hook = sy.TorchHook(torch)
 
     X, y, folds = load_data(experiment_setup)
 
@@ -158,7 +155,7 @@ def main():
             print(experiment_config, flush=True)
 
             experiment = FederatedExperiment(
-                hook, model_config, experiment_config['num_of_workers'],
+                model_config, experiment_config['num_of_workers'],
                 node_distribution_str2func[experiment_config['node_distribution']]
             )
 
@@ -185,6 +182,8 @@ def main():
                 writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
                 for k in range(experiment_setup.output_size):
                     writer.writerow(results[k])
+
+            del experiment, p, queue
 
 
 if __name__ == "__main__":
