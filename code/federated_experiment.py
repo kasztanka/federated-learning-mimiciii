@@ -35,6 +35,9 @@ class FederatedExperiment:
 
         for idx, tag in zip(indices, tags):
             for i, (part_x, part_y) in enumerate(self.node_distribution(tensor_X[idx], tensor_y[idx], len(workers))):
+                # at least two samples are needed for training
+                if len(part_x) < 2 and tag == 'train':
+                    continue
                 tag_X = part_x.tag("#X", f"#{tag}").describe("")
                 tag_y = part_y.tag("#Y", f"#{tag}").describe("")
 
