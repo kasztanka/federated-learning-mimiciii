@@ -11,15 +11,19 @@ from utils import EarlyStopping
 
 
 class FederatedExperiment:
-    def __init__(self, hook, model_config, num_of_workers, node_distribution):
+    def __init__(self, hook, model_config, num_of_workers, node_distribution, use_real_workers):
         self.hook = hook
         self.model_config = model_config
         self.num_of_workers = num_of_workers
         self.node_distribution = node_distribution
+        self.use_real_workers = use_real_workers
 
     def create_workers(self):
-        addresses = [f'ws://worker{worker_id}:{worker_id + 5000}/' for worker_id in range(self.num_of_workers)]
-        return [DataCentricFLClient(self.hook, address) for address in addresses]
+        if self.use_real_workers:
+            addresses = [f'ws://worker{worker_id}:{worker_id + 5000}/' for worker_id in range(self.num_of_workers)]
+            return [DataCentricFLClient(self.hook, address) for address in addresses]
+        else:
+            return [sy.VirtualWorker(self.hook, id=worker_id) for worker_id in range(self.num_of_workers)]
 
     def distribute_dataset(self, X, y, train_idx, test_idx, workers):
         tensor_X, tensor_y = torch.tensor(X).float(), torch.tensor(y).float()
@@ -127,6 +131,9 @@ class FederatedExperiment:
 
     def clean_up(self, workers):
         for worker in workers:
-            worker.clear_objects_remote()
-            worker.close()
+            if self.use_real_workers:
+                worker.clear_objects_remote()
+                worker.close()
+            else:
+                worker.clear_objects()
         self.hook.local_worker.clear_objects()

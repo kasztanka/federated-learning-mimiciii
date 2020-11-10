@@ -178,7 +178,14 @@ def main():
             elif experiment_config['nodes_type'] == 'real':
                 experiment = FederatedExperiment(
                     hook, model_config, experiment_config['num_of_workers'],
-                    node_distribution_str2func[experiment_config['node_distribution']]
+                    node_distribution_str2func[experiment_config['node_distribution']],
+                    use_real_workers=True
+                )
+            elif experiment_config['nodes_type'] == 'virtual':
+                experiment = FederatedExperiment(
+                    hook, model_config, experiment_config['num_of_workers'],
+                    node_distribution_str2func[experiment_config['node_distribution']],
+                    use_real_workers=False
                 )
             else:
                 raise ValueError(f'Wrong nodes type. Allowed values are: "no nodes", "real" or "virtual"')
