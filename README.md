@@ -21,7 +21,11 @@ docker-compose -f docker-compose.notebooks.yml up
 After that, go to `localhost:8888/?token=look_for_token_in_the_terminal` and select a notebook that you would like to run.
 By default the results will be saved in `./notebooks/results/`.
 
+TODO: Describe configuration of experiments.
+
 ## Running the experiments
+
+### Federated with real nodes
 
 To run the experiments use the following commands:
 ```
@@ -39,3 +43,13 @@ Additionally, you can pass a maximal number of workers used in experiments as a 
 python create_docker_compose_for_experiments.py 3
 ```
 The docker-compose.experiments.yml file in this repository is a sample file created by this script for three workers.
+
+NOTE: If you get an error about no associated hostname, verify if a sufficient number of workers in the experiment is started by the docker-compose.experiments file.
+
+### Others
+
+To run the not federated experiments or federated ones with virtual workers, change the configuration and run:
+```
+docker build --tag federated_experiments . -f Experiments.Dockerfile
+docker run -v /absolute/path/to/results:/results federated_experiments
+```

@@ -24,8 +24,7 @@ class FederatedExperiment:
     def distribute_dataset(self, X, y, train_idx, test_idx, workers):
         tensor_X, tensor_y = torch.tensor(X).float(), torch.tensor(y).float()
 
-        num_train = len(train_idx)
-        split = int(np.floor(self.model_config.validation_split * num_train))
+        split = int(np.floor(self.model_config.validation_split * len(train_idx)))
         train_idx, valid_idx = train_idx[split:], train_idx[:split]
         indices = [train_idx, valid_idx, test_idx]
         tags = ['train', 'valid', 'test']
