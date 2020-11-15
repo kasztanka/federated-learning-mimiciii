@@ -2,7 +2,7 @@
   "default": {
     "nodes_type": "real",
     "train_size": null,
-    "num_of_workers": 4,
+    "num_of_workers": 32,
     "node_distribution": "uniform"
   },
   "experiments": [

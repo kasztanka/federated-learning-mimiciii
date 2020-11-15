@@ -1,7 +1,7 @@
 import os
 import sys
 
-NUM_OF_WORKERS = 128
+NUM_OF_WORKERS = 32
 
 BEGINNING = '''version: "3"
 services:
@@ -51,7 +51,7 @@ def main():
     else:
         num_of_workers = NUM_OF_WORKERS
 
-    with open(f'docker-compose.experiments.yml', 'w') as f:
+    with open(f'docker-compose.yml', 'w') as f:
         f.write(BEGINNING)
         workers = ''
         for i in range(num_of_workers):
